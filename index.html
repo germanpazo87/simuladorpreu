@@ -1,0 +1,240 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Simulador de preu</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Disposició: capçalera amb selector de cas, després dues seccions (mercat i empresa), cada una amb controls a l'esquerra i resultats + gràfic a la dreta. */
+:root{--bg:#f4f6f9;--panel:#ffffff;--ink:#16253d;--muted:#5a6b80;--line:#d9e0ea;--accent:#ee6c4d;--blue:#3d5a80;--good:#1b7f4b;--bad:#b3261e;--chip:#e8eef6;--grid:#e3e8ef;
+--sans:'Public Sans',Arial,sans-serif;--mono:'JetBrains Mono',ui-monospace,monospace}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1a2b;--panel:#16253d;--ink:#eef2f8;--muted:#a3b2c6;--line:#2c3f5c;--accent:#ff8a6b;--blue:#8fb2e0;--good:#4cc38a;--bad:#ff8f87;--chip:#1f3452;--grid:#24364f;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f1a2b;--panel:#16253d;--ink:#eef2f8;--muted:#a3b2c6;--line:#2c3f5c;--accent:#ff8a6b;--blue:#8fb2e0;--good:#4cc38a;--bad:#ff8f87;--chip:#1f3452;--grid:#24364f;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.45;padding-block:20px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:22px}
+header{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;justify-content:space-between}
+h1{font-size:30px;line-height:1.1;margin:0;text-wrap:balance}
+.eyebrow{font-size:13px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin:0 0 6px}
+.sub{color:var(--muted);margin:6px 0 0;max-width:62ch}
+.bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+select,button,input[type=number]{font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 12px}
+button{cursor:pointer;font-weight:600}button:hover{border-color:var(--blue)}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+section{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:26px}
+@media(max-width:860px){section{grid-template-columns:minmax(0,1fr)}}
+h2{font-size:21px;margin:0 0 4px}
+.lead{color:var(--muted);margin:0 0 14px;font-size:15px}
+.grp{margin:0 0 14px;padding:0;border:0}
+.grp legend{font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--blue);padding:0;margin-bottom:6px}
+.ctl{display:grid;grid-template-columns:minmax(0,1fr) 92px;gap:2px 10px;align-items:center;margin-bottom:8px}
+.ctl label{font-size:15px}
+.ctl input[type=range]{grid-column:1/3;width:100%;accent-color:var(--accent)}
+.ctl input[type=number]{width:92px;padding:5px 8px;text-align:right;font-family:var(--mono);font-size:14px}
+.tot{display:flex;justify-content:space-between;font-weight:700;border-top:1px solid var(--line);padding-top:6px;font-family:var(--mono);font-size:14px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.kpi{background:var(--chip);border-radius:10px;padding:10px 12px;min-width:0}
+.kpi small{display:block;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.kpi b{font-family:var(--mono);font-size:21px;font-weight:500;overflow-wrap:anywhere}
+.kpi i{display:block;font-style:normal;font-size:13px;color:var(--muted)}
+.pos{color:var(--good)}.neg{color:var(--bad)}
+svg{width:100%;height:auto;display:block}
+.chartbox{border:1px solid var(--line);border-radius:10px;padding:6px;overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:right;padding:7px 8px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:13.5px}
+th:first-child,td:first-child{text-align:left;font-family:var(--sans)}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-family:var(--sans)}
+.tw{overflow-x:auto}
+.mini{font-size:14px;color:var(--muted);margin:8px 0 0}
+.try{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 22px}
+.try h2{font-size:18px}.try ol{margin:6px 0 0;padding-left:22px}.try li{margin-bottom:4px}
+.seg{display:flex;gap:6px;margin:0 0 12px;flex-wrap:wrap}
+.seg label{font-size:14px;display:flex;align-items:center;gap:6px}
+</style>
+<div class="wrap">
+<header>
+<div>
+<p class="eyebrow">Tecnologia Industrial CAS · Bloc 2 · Sessió 10.2</p>
+<h1>Simulador de preu i benefici</h1>
+<p class="sub">Canvia un paràmetre i mira què passa amb l’equilibri, l’elasticitat, el punt mort i el benefici. Tots els valors són inventats per entrenar.</p>
+</div>
+<div class="bar">
+<label for="preset" class="sr">Cas</label>
+<select id="preset"><option value="mobil">Mòbil Roca (patent)</option><option value="conjunt">Conjunt eix + suport SKF</option></select>
+<button id="reset" type="button">Valors inicials</button>
+</div>
+</div>
+
+<section id="s-mercat" aria-labelledby="h-mercat">
+<div>
+<h2 id="h-mercat">1 · El mercat</h2>
+<p class="lead" id="lead-mercat"></p>
+<fieldset class="grp"><legend>Demanda: Qd = a − b·P</legend><div id="c-dem"></div></fieldset>
+<fieldset class="grp"><legend>Oferta: Qo = c + d·P</legend><div id="c-of"></div></fieldset>
+</div>
+<div>
+<div class="kpis" id="k-mercat"></div>
+<div class="chartbox"><svg id="ch-mercat" viewBox="0 0 640 340" role="img" aria-label="Corbes d’oferta i demanda amb el punt d’equilibri"></svg></div>
+<p class="mini" id="m-mercat"></p>
+</div>
+</section>
+
+<section id="s-empresa" aria-labelledby="h-emp">
+<div>
+<h2 id="h-emp">2 · La nostra empresa</h2>
+<p class="lead" id="lead-emp"></p>
+<fieldset class="grp"><legend>Preu i volum</legend>
+<div id="c-preu"></div>
+<div class="seg"><label><input type="radio" name="mode" value="dem" checked> Volum segons la demanda</label><label><input type="radio" name="mode" value="fix"> Volum fix (contracte)</label></div>
+<div id="c-vol"></div>
+</fieldset>
+<fieldset class="grp"><legend>Cost variable per unitat</legend><div id="c-cv"></div><div class="tot"><span>CVu</span><span id="t-cv"></span></div></fieldset>
+<fieldset class="grp"><legend id="lg-cf"></legend><div id="c-cf"></div><div class="tot"><span>CF</span><span id="t-cf"></span></div></fieldset>
+</div>
+<div>
+<div class="kpis" id="k-emp"></div>
+<div class="chartbox"><svg id="ch-emp" viewBox="0 0 640 340" role="img" aria-label="Benefici segons el preu"></svg></div>
+<p class="mini" id="m-emp"></p>
+<h2 style="margin-top:18px;font-size:18px">Quatre estratègies de preu</h2>
+<div class="tw"><table id="tb"></table></div>
+</div>
+</section>
+
+<div class="try"><h2>Per provar</h2>
+<ol id="try"></ol></div>
+</div>
+<script>
+const fmt=(x,d=0)=>isFinite(x)?x.toLocaleString('ca-ES',{minimumFractionDigits:d,maximumFractionDigits:d}):'—';
+const PRESETS={
+mobil:{
+ nom:'Mòbil Roca',ud:'milers de mòbils',per:'any',moneda:'€',
+ leadM:'Mercat de smartphones resistents. Quantitats en milers d’unitats a l’any, preus en € per mòbil.',
+ leadE:'La nostra empresa té la patent d’un material molt resistent. Un únic cost fix gran (R+D) i un cost variable petit per mòbil.',
+ mercat:{a:900,b:2,c:-600,d:3},
+ preu:300,cap:150,A:240,B:0.4,fix:50,mode:'dem',
+ cv:[['Components electrònics',140],['Material patentat',25],['Muntatge',15],['Logística i garantia',10]],
+ cf:[['R+D i patent (amortitzat)',3000000],['Màrqueting de llançament',1800000],['Estructura i fàbrica',1200000]],
+ cfLg:'Cost fix anual (€)',cfMult:1,volUnit:1000,
+ prova:['Mou el preu fins al màxim benefici. És també el preu que dona més ingressos?','Baixa la capacitat a 60. Què passa amb el benefici i amb el preu òptim?','Puja el cost del material patentat de 25 a 70 €. Segueix sent rendible el mòbil?','Canvia la pendent de la demanda (b) de l’empresa. Què vol dir una demanda més elàstica?']
+},
+conjunt:{
+ nom:'Conjunt eix + suport SKF',ud:'conjunts',per:'dia',moneda:'€',
+ leadM:'Mercat de conjunts eix + suport. Quantitats en centenars de conjunts al dia.',
+ leadE:'El nostre encàrrec: costos de la S10.1 (CVu 15,85 € i CF 4.664,27 € al dia) i un competidor a 19,50 €.',
+ mercat:{a:84,b:2,c:0,d:2},
+ preu:22,cap:1000,A:4000,B:142.857,fix:1000,mode:'dem',
+ cv:[['Materials i coixinets',15.05],['Energia',0.8],['Altres variables',0],['—',0]],
+ cf:[['Mà d’obra (16 persones)',3072],['Amortització equips i motlle',542.27],['Manteniment',150],['Estructura',900]],
+ cfLg:'Cost fix diari (€)',cfMult:1,volUnit:1,
+ prova:['Posa el preu a 19,50 €. Quant perdem al dia?','Troba el preu que dona el màxim benefici. Està a prop dels 22 € del client?','Baixa el cost variable 1,50 €. Fins a quin preu del competidor podem arribar a guanyar diners?','Canvia a volum fix de 1.000 conjunts: quin és ara el punt mort?']
+}};
+let S=null,K='mobil';
+const el=id=>document.getElementById(id);
+function ctl(box,key,label,min,max,step,get,set){
+ const w=document.createElement('div');w.className='ctl';
+ const id='i_'+key;
+ w.innerHTML=`<label for="${id}n">${label}</label><input id="${id}n" type="number" step="${step}" inputmode="decimal"><input id="${id}r" type="range" min="${min}" max="${max}" step="${step}" aria-label="${label}">`;
+ const n=w.querySelector('input[type=number]'),r=w.querySelector('input[type=range]');
+ const sync=()=>{n.value=get();r.value=get()};
+ n.addEventListener('input',()=>{const v=parseFloat(n.value);if(isFinite(v)){set(v);r.value=v;draw()}});
+ r.addEventListener('input',()=>{set(parseFloat(r.value));n.value=r.value;draw()});
+ sync();w._sync=sync;box.appendChild(w);return w;
+}
+let syncs=[];
+function build(){
+ const P=PRESETS[K];S=JSON.parse(JSON.stringify(P));syncs=[];
+ ['c-dem','c-of','c-preu','c-vol','c-cv','c-cf'].forEach(i=>el(i).innerHTML='');
+ el('lead-mercat').textContent=P.leadM;el('lead-emp').textContent=P.leadE;el('lg-cf').textContent=P.cfLg;
+ const m=S.mercat,mx=K==='mobil'?[2000,10,0,10]:[200,6,0,6];
+ syncs.push(ctl(el('c-dem'),'a','Demanda màxima (a)',0,mx[0],K==='mobil'?10:1,()=>m.a,v=>m.a=v));
+ syncs.push(ctl(el('c-dem'),'b','Pendent de la demanda (b)',0.1,mx[1],0.1,()=>m.b,v=>m.b=v));
+ syncs.push(ctl(el('c-of'),'c','Oferta a preu 0 (c)',K==='mobil'?-1500:-60,K==='mobil'?500:60,K==='mobil'?10:1,()=>m.c,v=>m.c=v));
+ syncs.push(ctl(el('c-of'),'d','Pendent de l’oferta (d)',0.1,mx[3],0.1,()=>m.d,v=>m.d=v));
+ const pmax=K==='mobil'?700:40;
+ syncs.push(ctl(el('c-preu'),'p','Preu de venda (€)',1,pmax,K==='mobil'?1:0.1,()=>S.preu,v=>S.preu=v));
+ syncs.push(ctl(el('c-vol'),'cap','Capacitat de la planta ('+P.ud+')',1,K==='mobil'?400:2500,K==='mobil'?1:10,()=>S.cap,v=>S.cap=v));
+ syncs.push(ctl(el('c-vol'),'A','Demanda pròpia a preu 0 (A)',10,K==='mobil'?600:8000,K==='mobil'?1:10,()=>S.A,v=>S.A=v));
+ syncs.push(ctl(el('c-vol'),'B','Pendent pròpia (B)',0.05,K==='mobil'?2:400,K==='mobil'?0.05:1,()=>S.B,v=>S.B=v));
+ syncs.push(ctl(el('c-vol'),'fix','Volum fix pactat',0,K==='mobil'?400:2500,K==='mobil'?1:10,()=>S.fix,v=>S.fix=v));
+ S.cv.forEach((c,i)=>{if(c[0]==='—')return;syncs.push(ctl(el('c-cv'),'cv'+i,c[0]+' (€)',0,K==='mobil'?300:30,K==='mobil'?1:0.05,()=>S.cv[i][1],v=>S.cv[i][1]=v))});
+ S.cf.forEach((c,i)=>syncs.push(ctl(el('c-cf'),'cf'+i,c[0]+' (€)',0,K==='mobil'?6000000:6000,K==='mobil'?50000:10,()=>S.cf[i][1],v=>S.cf[i][1]=v)));
+ document.querySelectorAll('input[name=mode]').forEach(r=>r.checked=(r.value===S.mode));
+ el('try').innerHTML=P.prova.map(t=>`<li>${t}</li>`).join('');
+ draw();
+}
+const CV=()=>S.cv.reduce((s,c)=>s+c[1],0),CF=()=>S.cf.reduce((s,c)=>s+c[1],0);
+function qOf(P){ if(S.mode==='fix')return Math.min(S.fix,S.cap); return Math.min(S.cap,Math.max(0,S.A-S.B*P)); }
+const unitMult=()=>PRESETS[K].volUnit;
+function benef(P){const q=qOf(P)*unitMult();return (P-CV())*q-CF();}
+function draw(){
+ const P=PRESETS[K],m=S.mercat;
+ const Pe=(m.a-m.c)/(m.b+m.d),Qe=m.a-m.b*Pe;
+ const ok=Pe>0&&Qe>0;
+ el('k-mercat').innerHTML=`<div class="kpi"><small>Preu d’equilibri</small><b>${ok?fmt(Pe,K==='mobil'?0:2)+' €':'—'}</b></div><div class="kpi"><small>Quantitat d’equilibri</small><b>${ok?fmt(Qe,K==='mobil'?0:1):'—'}</b><i>${K==='mobil'?'milers de mòbils':'centenars de conjunts'}</i></div><div class="kpi"><small>A ${fmt(S.preu,K==='mobil'?0:2)} €</small><b class="${m.a-m.b*S.preu>m.c+m.d*S.preu?'':''}">${m.a-m.b*S.preu>m.c+m.d*S.preu?'escassetat':'excedent'}</b><i>de ${fmt(Math.abs((m.a-m.b*S.preu)-(m.c+m.d*S.preu)),K==='mobil'?0:1)}</i></div>`;
+ el('m-mercat').textContent=ok?`Equilibri: ${fmt(m.a,0)} − ${fmt(m.b,1)}P = ${fmt(m.c,0)} + ${fmt(m.d,1)}P, d’on P = ${fmt(Pe,2)} i Q = ${fmt(Qe,1)}.`:'Amb aquests valors no hi ha equilibri positiu.';
+ chartMercat(Pe,Qe,ok);
+ const cv=CV(),cf=CF();el('t-cv').textContent=fmt(cv,2)+' €';el('t-cf').textContent=fmt(cf,0)+' €';
+ const q=qOf(S.preu),qq=q*unitMult(),ing=S.preu*qq,cost=cv*qq+cf,b=ing-cost;
+ const mc=S.preu-cv,pm=mc>0?cf/mc/unitMult():Infinity;
+ const dem=S.A-S.B*S.preu,E=dem>0?-S.B*S.preu/dem:NaN;
+ const cu=qq>0?cost/qq:NaN;
+ const eTxt=S.mode==='fix'?'volum fix':(Math.abs(E)>1.0001?'elàstica':Math.abs(E)<.9999?'inelàstica':'unitària');
+ el('k-emp').innerHTML=
+ `<div class="kpi"><small>Venem</small><b>${fmt(q,K==='mobil'?1:0)}</b><i>${P.ud} · ${fmt(q/S.cap*100,0)} % de la capacitat</i></div>`+
+ `<div class="kpi"><small>Ingressos</small><b>${fmt(ing,0)} €</b></div>`+
+ `<div class="kpi"><small>Cost total</small><b>${fmt(cost,0)} €</b><i>cost unitari ${fmt(cu,2)} €</i></div>`+
+ `<div class="kpi"><small>Benefici</small><b class="${b>=0?'pos':'neg'}">${fmt(b,0)} €</b><i>${b>=0?'guany':'pèrdua'} per ${P.per}</i></div>`+
+ `<div class="kpi"><small>Punt mort</small><b>${mc>0?fmt(pm,K==='mobil'?1:0):'sense'}</b><i>${mc>0?P.ud+' per '+P.per:'el preu no cobreix el CVu'}</i></div>`+
+ `<div class="kpi"><small>Elasticitat</small><b>${S.mode==='fix'?'—':fmt(E,2)}</b><i>${eTxt}</i></div>`;
+ // preu òptim
+ let best=-Infinity,bp=0,rev=-Infinity,rp=0;const lim=S.mode==='fix'?(PRESETS[K].mercat.a/ (K==='mobil'?1:1)):S.A/S.B;
+ const top=K==='mobil'?700:40;
+ for(let p=Math.max(cv*0.6,1);p<=top;p+=top/700){const bb=benef(p);if(bb>best){best=bb;bp=p}const rr=p*qOf(p);if(rr>rev){rev=rr;rp=p}}
+ el('m-emp').innerHTML=S.mode==='fix'?`Amb volum fix el benefici creix amb el preu: no hi ha preu òptim.`:`Preu de màxim benefici: <b>${fmt(bp,2)} €</b> (${fmt(best,0)} €). Preu de màxims ingressos: <b>${fmt(rp,2)} €</b>. No coincideixen perquè els costos també compten.`;
+ chartEmp(bp,best);
+ // taula estratègies
+ const pe=ok?Pe:S.preu;const strat=K==='mobil'?[['Penetració (−15 % del mercat)',pe*.85],['Preu de mercat',pe],['Premium (+33 %)',pe*1.33],['Descrematge (+67 %)',pe*1.67]]:[['Igualar el competidor',19.5],['Preu de mercat',21],['Objectiu del client',22],['Cost més 10 %',22.56]];
+ el('tb').innerHTML='<tr><th>Estratègia</th><th>Preu (€)</th><th>Volum</th><th>Benefici (€)</th><th>Punt mort</th></tr>'+strat.map(([n,p])=>{const qv=qOf(p),bb=benef(p),mcp=p-cv;return `<tr><td>${n}</td><td>${fmt(p,2)}</td><td>${fmt(qv,K==='mobil'?1:0)}</td><td class="${bb>=0?'pos':'neg'}">${fmt(bb,0)}</td><td>${mcp>0?fmt(cf/mcp/unitMult(),K==='mobil'?1:0):'—'}</td></tr>`}).join('');
+}
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function axes(W,H,L,Bt,xmax,ymax,xl,yl,xt,yt){
+ let s='';const ml=L,mb=Bt,w=W-ml-20,h=H-mb-14;
+ for(let i=0;i<=5;i++){const x=ml+w*i/5,y=14+h-h*i/5;
+  s+=`<line x1="${x}" y1="14" x2="${x}" y2="${14+h}" stroke="${css('--grid')}"/><line x1="${ml}" y1="${y}" x2="${ml+w}" y2="${y}" stroke="${css('--grid')}"/>`;
+  s+=`<text x="${x}" y="${14+h+16}" font-size="12" text-anchor="middle" fill="${css('--muted')}">${xt(xmax*i/5)}</text><text x="${ml-6}" y="${y+4}" font-size="12" text-anchor="end" fill="${css('--muted')}">${yt(ymax*i/5)}</text>`;}
+ s+=`<text x="${ml+w/2}" y="${H-4}" font-size="12.5" text-anchor="middle" fill="${css('--ink')}">${xl}</text><text x="14" y="${14+h/2}" font-size="12.5" text-anchor="middle" fill="${css('--ink')}" transform="rotate(-90 14 ${14+h/2})">${yl}</text>`;
+ return {s,X:v=>ml+w*v/xmax,Y:v=>14+h-h*v/ymax};
+}
+function chartMercat(Pe,Qe,ok){
+ const m=S.mercat,pmax=K==='mobil'?700:40,qmax=K==='mobil'?1000:100;
+ const a=axes(640,340,56,40,qmax,pmax,K==='mobil'?'Quantitat (milers de mòbils)':'Quantitat (centenars)','Preu (€)',v=>fmt(v,0),v=>fmt(v,0));
+ let s=a.s;
+ const line=(f,col)=>{let d='';for(let p=0;p<=pmax;p+=pmax/70){const q=f(p);if(q<0||q>qmax*1.0)continue;d+=(d?'L':'M')+a.X(q)+' '+a.Y(p)}return `<path d="${d}" fill="none" stroke="${col}" stroke-width="3"/>`};
+ s+=line(p=>m.a-m.b*p,css('--blue'))+line(p=>m.c+m.d*p,css('--accent'));
+ s+=`<text x="${a.X(qmax*.04)}" y="${a.Y(pmax*.9)}" font-size="13" font-weight="700" fill="${css('--blue')}">Demanda</text><text x="${a.X(qmax*.62)}" y="${a.Y(pmax*.95)}" font-size="13" font-weight="700" fill="${css('--accent')}">Oferta</text>`;
+ if(ok&&Pe<=pmax&&Qe<=qmax)s+=`<circle cx="${a.X(Qe)}" cy="${a.Y(Pe)}" r="6" fill="${css('--ink')}"/><text x="${a.X(Qe)+10}" y="${a.Y(Pe)-8}" font-size="12.5" font-weight="700" fill="${css('--ink')}">Equilibri (${fmt(Qe,K==='mobil'?0:1)} ; ${fmt(Pe,K==='mobil'?0:2)} €)</text>`;
+ if(S.preu<=pmax)s+=`<line x1="${a.X(0)}" x2="${a.X(qmax)}" y1="${a.Y(S.preu)}" y2="${a.Y(S.preu)}" stroke="${css('--muted')}" stroke-dasharray="5 4"/><text x="${a.X(qmax)-4}" y="${a.Y(S.preu)-5}" font-size="12" text-anchor="end" fill="${css('--muted')}">El nostre preu</text>`;
+ el('ch-mercat').innerHTML=s;
+}
+function chartEmp(bp,best){
+ const top=K==='mobil'?700:40,pts=[];let lo=Infinity,hi=-Infinity;
+ for(let p=Math.max(CV()*0.5,1);p<=top;p+=top/140){const b=benef(p);pts.push([p,b]);lo=Math.min(lo,b);hi=Math.max(hi,b)}
+ hi=Math.max(hi,1);lo=Math.min(lo,0);const pad=(hi-lo)*0.08;hi+=pad;lo-=pad;
+ const W=640,H=340,ml=70,mb=40,w=W-ml-20,h=H-mb-14;
+ const X=p=>ml+w*p/top,Y=b=>14+h-h*(b-lo)/(hi-lo);
+ let s='';
+ for(let i=0;i<=5;i++){const x=ml+w*i/5,yv=lo+(hi-lo)*i/5,y=Y(yv);
+  s+=`<line x1="${x}" y1="14" x2="${x}" y2="${14+h}" stroke="${css('--grid')}"/><line x1="${ml}" y1="${y}" x2="${ml+w}" y2="${y}" stroke="${css('--grid')}"/><text x="${x}" y="${14+h+16}" font-size="12" text-anchor="middle" fill="${css('--muted')}">${fmt(top*i/5,0)}</text><text x="${ml-6}" y="${y+4}" font-size="12" text-anchor="end" fill="${css('--muted')}">${fmt(yv/(K==='mobil'?1e6:1),K==='mobil'?1:0)}${K==='mobil'?' M':''}</text>`;}
+ s+=`<line x1="${ml}" x2="${ml+w}" y1="${Y(0)}" y2="${Y(0)}" stroke="${css('--ink')}" stroke-width="1.5"/>`;
+ s+=`<text x="${ml+w/2}" y="${H-4}" font-size="12.5" text-anchor="middle" fill="${css('--ink')}">Preu de venda (€)</text><text x="14" y="${14+h/2}" font-size="12.5" text-anchor="middle" fill="${css('--ink')}" transform="rotate(-90 14 ${14+h/2})">Benefici (€)</text>`;
+ s+=`<path d="${pts.map((p,i)=>(i?'L':'M')+X(p[0])+' '+Y(p[1])).join('')}" fill="none" stroke="${css('--blue')}" stroke-width="3"/>`;
+ const cur=benef(S.preu);
+ s+=`<line x1="${X(S.preu)}" x2="${X(S.preu)}" y1="14" y2="${14+h}" stroke="${css('--accent')}" stroke-dasharray="5 4"/><circle cx="${X(S.preu)}" cy="${Y(cur)}" r="6" fill="${css('--accent')}"/>`;
+ if(S.mode!=='fix'&&bp<=top)s+=`<circle cx="${X(bp)}" cy="${Y(best)}" r="5" fill="${css('--good')}"/><text x="${Math.min(X(bp)+8,ml+w-4)}" y="${Y(best)-9}" font-size="12.5" font-weight="700" fill="${css('--good')}" text-anchor="${X(bp)>ml+w-130?'end':'start'}">Màxim: ${fmt(bp,0)} €</text>`;
+ el('ch-emp').innerHTML=s;
+}
+el('preset').addEventListener('change',e=>{K=e.target.value;build()});
+el('reset').addEventListener('click',build);
+document.querySelectorAll('input[name=mode]').forEach(r=>r.addEventListener('change',()=>{S.mode=r.value;draw()}));
+build();
+</script>
+
+</body></html>
